@@ -3,6 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
+
+
+[System.Serializable]
+class SaveData
+{
+    public int record;
+}
 
 public class MainManager : MonoBehaviour
 {
@@ -11,17 +19,22 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text BestScore;
     public GameObject GameOverText;
     
     private bool m_Started = false;
     private int m_Points;
-    
     private bool m_GameOver = false;
 
     
     // Start is called before the first frame update
     void Start()
     {
+        LoadRecord();
+        if (MainMenu.Instance != null)
+        {
+            ScoreText.text = MainMenu.Instance.name + $" Score : {m_Points}";
+        }
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -70,7 +83,30 @@ public class MainManager : MonoBehaviour
 
     public void GameOver()
     {
+        SaveRecord();
         m_GameOver = true;
         GameOverText.SetActive(true);
+    }
+
+    public void SaveRecord()
+    {
+        SaveData data = new SaveData();
+        data.record = m_Points;
+
+        string json = JsonUtility.ToJson(data);
+
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    public void LoadRecord()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            BestScore.text = "Best Score : "+ MainMenu.Instance.name + " : " + data.record;
+        }
     }
 }
